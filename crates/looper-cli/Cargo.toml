@@ -1,0 +1,13 @@
+[package]
+name = "looper-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "looper-cli"
+path = "src/main.rs"
+
+[dependencies]
+looper-core = { workspace = true }
+serde_json = { workspace = true }

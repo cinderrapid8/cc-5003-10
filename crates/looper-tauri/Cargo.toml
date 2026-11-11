@@ -1,0 +1,26 @@
+[package]
+name = "looper-tauri"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "looper_tauri"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", optional = true }
+
+[dependencies]
+looper-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tauri = { version = "2", optional = true }
+
+[features]
+# The desktop feature needs the native WebKit/GTK toolchain. In minimal
+# environments (CI containers without the system libraries) build the
+# workspace with --no-default-features; the CLI and demo server still provide
+# every builder capability.
+default = ["desktop"]
+desktop = ["dep:tauri", "dep:tauri-build"]

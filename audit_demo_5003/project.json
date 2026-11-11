@@ -1,0 +1,84 @@
+{
+  "name": "game-loop-demo",
+  "assets": [
+    {
+      "id": "engine_idle",
+      "source": "samples/engine_dc_offset.wav",
+      "source_sha256": null,
+      "region": {
+        "start_frame": 4800,
+        "end_frame": 80000,
+        "search_window": 512
+      },
+      "fade_ms": 30.0,
+      "fade_curve": "equal_power",
+      "min_keep_frames": 256,
+      "variants": [
+        {
+          "kind": "parametric",
+          "name": "intensity_low",
+          "gain": 0.55,
+          "resample_ratio": 0.92
+        },
+        {
+          "kind": "parametric",
+          "name": "intensity_high",
+          "gain": 1.35,
+          "resample_ratio": 1.08
+        }
+      ],
+      "encode_lossy": true,
+      "encode_packed": true,
+      "packed_delay_frames": 1024,
+      "packed_padding_frames": 768
+    },
+    {
+      "id": "mechanical_hum",
+      "source": "samples/mechanical_noninteger_period.wav",
+      "source_sha256": null,
+      "region": {
+        "start_frame": 2400,
+        "end_frame": 60000,
+        "search_window": 384
+      },
+      "fade_ms": 25.0,
+      "fade_curve": "equal_power",
+      "min_keep_frames": 128,
+      "variants": [
+        {
+          "kind": "independent",
+          "name": "hum_alt",
+          "source": "samples/ambient_stereo_phase.wav",
+          "source_sha256": null,
+          "region": {
+            "start_frame": 4800,
+            "end_frame": 72000,
+            "search_window": 256
+          },
+          "fade_ms": 40.0,
+          "fade_curve": "linear",
+          "min_keep_frames": 128
+        }
+      ],
+      "encode_lossy": true,
+      "encode_packed": true,
+      "packed_delay_frames": 1024,
+      "packed_padding_frames": 768
+    },
+    {
+      "id": "ambient_bed",
+      "source": "samples/ambient_stereo_phase.wav",
+      "source_sha256": null,
+      "region": null,
+      "fade_ms": 50.0,
+      "fade_curve": "equal_power",
+      "min_keep_frames": 512,
+      "variants": [],
+      "encode_lossy": true,
+      "encode_packed": true,
+      "packed_delay_frames": 1024,
+      "packed_padding_frames": 768
+    }
+  ],
+  "schema_version": 1
+}

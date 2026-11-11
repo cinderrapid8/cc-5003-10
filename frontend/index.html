@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>游戏循环声库构建器</title>
+  </head>
+  <body>
+    <header>
+      <h1>游戏循环声库构建器</h1>
+      <p class="sub">
+        样本索引循环边界 · 零交叉仅候选 · 左右声道+频谱不连续检测 · 可追算淡化区间 ·
+        解码坐标回验
+      </p>
+    </header>
+
+    <main>
+      <section class="card" id="paths-card">
+        <h2>1. 工作目录</h2>
+        <div class="grid">
+          <label>素材/工程基准目录
+            <input id="baseDir" value="demo" />
+          </label>
+          <label>输出目录（相对基准）
+            <input id="outDir" value="out" />
+          </label>
+          <label>工程文件（相对基准）
+            <input id="projectPath" value="project.json" />
+          </label>
+        </div>
+        <div class="row">
+          <button id="btnSynth">生成合成测试素材</button>
+          <button id="btnInit">写入示例工程</button>
+          <button id="btnSave">保存工程</button>
+          <button id="btnLoad">读取工程</button>
+        </div>
+        <p class="hint" id="pathMsg"></p>
+      </section>
+
+      <section class="card">
+        <h2>2. 工程定义（JSON）</h2>
+        <textarea id="projectEditor" spellcheck="false"></textarea>
+        <p class="hint">
+          强度变体必须给出明确 gain/resample_ratio，或指向独立原件；同名不等于同一资源。
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>3. 构建与进度</h2>
+        <div class="row">
+          <button id="btnBuild" class="primary">构建声库</button>
+          <button id="btnVerify">重新解码验证</button>
+          <button id="btnStopAudio">停止所有试听</button>
+        </div>
+        <div id="progress" class="progress"></div>
+      </section>
+
+      <section class="card">
+        <h2>4. 声库清单与循环试听</h2>
+        <div class="row">
+          <label>循环轮数
+            <input id="rounds" type="number" min="1" max="64" value="4" style="width: 5rem" />
+          </label>
+        </div>
+        <div id="manifestView"></div>
+        <div id="verifyView"></div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
