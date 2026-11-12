@@ -2,7 +2,10 @@ use looper_core::manifest::ProgressEvent;
 use looper_core::model::{
     AssetSpec, FadeCurve, LoopRegion, Project, VariantSpec,
 };
-use looper_core::{build, load_project, reverify_manifest, save_project, synth};
+use looper_core::{
+    build, load_project, preflight_project, render_auditions, reverify_manifest, save_project,
+    summarize_manifest, synth,
+};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -12,10 +15,16 @@ USAGE:\n  looper-cli <COMMAND> [ARGS]\n\n\
 COMMANDS:\n  \
   synth <DIR>                Write deterministic synthetic test WAVs\n  \
   init <PROJECT.json> <SRC_DIR>  Create an example project over synth fixtures\n  \
+  preflight <PROJECT.json> <BASE_DIR>\n  \
+                             Check referenced sources, loop boundaries and variant\n  \
+                             configuration by really decoding every source\n  \
   build <PROJECT.json> <BASE_DIR> <OUT_DIR>\n  \
                              Build the soundbank (WAV masters + OGG), print progress\n  \
   verify <MANIFEST.json> <OUT_DIR>\n  \
                              Re-decode every resource and verify its loop seam\n  \
+  audition <MANIFEST.json> <OUT_DIR> <AUDITION_DIR> [ROUNDS]\n  \
+                             Render real multi-round loop WAVs from decoded resources\n  \
+  summary <MANIFEST.json>    Print a machine-readable manifest summary\n  \
   help\n"
 }
 
@@ -205,6 +214,74 @@ fn run() -> looper_core::Result<()> {
                 );
             }
             println!("verified {} resource(s)", reports.len());
+            Ok(())
+        }
+        "preflight" => {
+            let project_path = Path::new(args.get(2).ok_or_else(|| looper_error_msg("missing PROJECT.json"))?);
+            let base_dir = PathBuf::from(args.get(3).ok_or_else(|| looper_error_msg("missing BASE_DIR"))?);
+            let project = load_project(project_path)?;
+            let report = preflight_project(&project, &base_dir)?;
+            for check in &report.checks {
+                let mark = if check.ok { "ok  " } else { "FAIL" };
+                println!("[{mark}] {} :: {} :: {}", check.scope, check.kind, check.detail);
+            }
+            println!(
+                "preflight {}: {} asset(s), {} variant(s), {} source(s), {} missing",
+                if report.ok { "PASS" } else { "FAILED" },
+                report.assets,
+                report.variants,
+                report.referenced_sources.len(),
+                report.missing_sources.len()
+            );
+            if !report.ok {
+                return Err(looper_error_msg("release preflight failed"));
+            }
+            Ok(())
+        }
+        "audition" => {
+            let manifest_path = Path::new(args.get(2).ok_or_else(|| looper_error_msg("missing MANIFEST.json"))?);
+            let out_dir = PathBuf::from(args.get(3).ok_or_else(|| looper_error_msg("missing OUT_DIR"))?);
+            let audition_dir = PathBuf::from(args.get(4).ok_or_else(|| looper_error_msg("missing AUDITION_DIR"))?);
+            let rounds = args
+                .get(5)
+                .map(|s| s.parse::<usize>())
+                .transpose()
+                .map_err(|_| looper_error_msg("ROUNDS must be a positive integer"))?
+                .unwrap_or(4);
+            let manifest: looper_core::Manifest = serde_json::from_slice(
+                &std::fs::read(manifest_path).map_err(|e| looper_core::LooperError::io(manifest_path, e))?,
+            )
+            .map_err(|e| looper_error_msg(&e.to_string()))?;
+            let renders = render_auditions(&manifest, &out_dir, &audition_dir, rounds)?;
+            for r in &renders {
+                println!(
+                    "{}/{} [{}] -> {} ({} frames, loop [{}, {}) len {}, seam jump {:.6})",
+                    r.asset,
+                    r.variant,
+                    r.codec,
+                    r.output_file,
+                    r.rendered_frames,
+                    r.loop_start_frame,
+                    r.loop_end_frame,
+                    r.loop_length_frames,
+                    r.seam_amplitude_jump
+                );
+            }
+            println!("rendered {} real audition loop(s) into {}", renders.len(), audition_dir.display());
+            Ok(())
+        }
+        "summary" => {
+            let manifest_path = Path::new(args.get(2).ok_or_else(|| looper_error_msg("missing MANIFEST.json"))?);
+            let manifest: looper_core::Manifest = serde_json::from_slice(
+                &std::fs::read(manifest_path).map_err(|e| looper_core::LooperError::io(manifest_path, e))?,
+            )
+            .map_err(|e| looper_error_msg(&e.to_string()))?;
+            let summary = summarize_manifest(&manifest);
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&summary)
+                    .map_err(|e| looper_error_msg(&e.to_string()))?
+            );
             Ok(())
         }
         other => {
